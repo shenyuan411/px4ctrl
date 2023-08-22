@@ -41,6 +41,7 @@ void PX4CtrlFSM::process()
 
     ros::Time now_time = ros::Time::now();
     Controller_Output_t u;
+    SO3_Controller_Output_t u_so3;
     Desired_State_t des(odom_data);
     bool rotor_low_speed_during_land = false;
 
@@ -82,9 +83,9 @@ void PX4CtrlFSM::process()
             }
 
             state = AUTO_HOVER;
-            controller.resetThrustMapping();
+            controller.resetThrustMapping();    //g/percent_hover
             set_hov_with_odom();
-            toggle_offboard_mode(true);
+            toggle_offboard_mode(true);         // 进入offboard模式
 
             ROS_INFO("\033[32m[px4ctrl] MANUAL_CTRL(L1) --> AUTO_HOVER(L2)\033[32m");
         }
@@ -163,12 +164,14 @@ void PX4CtrlFSM::process()
             toggle_offboard_mode(false);
 
             ROS_WARN("[px4ctrl] AUTO_HOVER(L2) --> MANUAL_CTRL(L1)");
-        } else if (rc_dy_data.is_command_mode && cmd_is_received(now_time)) {
+        }
+        // cmd触发接收轨迹
+         else if (rc_dy_data.is_command_mode && cmd_is_received(now_time)) {
 
             if (state_data.current_state.mode == "OFFBOARD") {
 
                 state = CMD_CTRL;
-                des = get_cmd_des();
+                des = get_cmd_des();//后续修改
                 ROS_INFO("\033[32m[px4ctrl] AUTO_HOVER(L2) --> CMD_CTRL(L3)\033[32m");
             }
         } else if (takeoff_land_data.triggered && takeoff_land_data.takeoff_land_cmd == quadrotor_msgs::TakeoffLand::LAND) {
@@ -210,8 +213,9 @@ void PX4CtrlFSM::process()
             set_hov_with_odom();
             des = get_hover_des();
             ROS_INFO("[px4ctrl] From CMD_CTRL(L3) to AUTO_HOVER(L2)!");
-        } else {
-
+        } else
+        // 满足触发条件
+        {
             des = get_cmd_des();
         }
 
@@ -309,8 +313,9 @@ void PX4CtrlFSM::process()
     } else {
 
         // controller.calculateControl(des, odom_data, imu_data, u);
-        debug_msg = controller.update_alg1(des, odom_data, imu_data, u);
-        // debug_msg = controller.calculateControl(des, odom_data, imu_data, u);
+        // debug_msg = controller.calculateControl(des, odom_data, imu_data, u);   //计算角度
+        debug_msg = controller.DLQR_Control(des, odom_data, imu_data, u);   //计算角度
+        
         debug_msg.header.stamp = now_time;
         if (param.debug) {
             debug_pub.publish(debug_msg);
@@ -407,6 +412,7 @@ Desired_State_t PX4CtrlFSM::get_hover_des() {
     return des;
 }
 
+
 Desired_State_t PX4CtrlFSM::get_cmd_des() {
 
     Desired_State_t des;
@@ -417,6 +423,19 @@ Desired_State_t PX4CtrlFSM::get_cmd_des() {
     des.yaw = cmd_data.yaw;
     des.yaw_rate = cmd_data.yaw_rate;
 
+    return des;
+}
+
+Desired_State_t PX4CtrlFSM::get_cmd_des2() {
+
+    Desired_State_t des;
+    des.p = cmd_data.p;
+    des.v = cmd_data.v;
+    des.a = cmd_data.a;
+    des.j = cmd_data.j;
+    des.yaw = cmd_data.yaw;
+    // des.yaw_rate = cmd_data.yaw_rate;
+    des.head_rate = cmd_data.head_rate;
     return des;
 }
 
@@ -548,9 +567,12 @@ void PX4CtrlFSM::publish_bodyrate_ctrl(const Controller_Output_t &u, const ros::
 
     msg.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ATTITUDE;
 
-    msg.body_rate.x = u.bodyrates.x();
-    msg.body_rate.y = u.bodyrates.y();
-    msg.body_rate.z = u.bodyrates.z();
+    // msg.body_rate.x = u.bodyrates.x();
+    // msg.body_rate.y = u.bodyrates.y();
+    // msg.body_rate.z = u.bodyrates.z();
+    msg.body_rate.x = u.roll_rate;
+    msg.body_rate.y = u.pitch_rate;
+    msg.body_rate.z = u.yaw_rate;
 
     msg.thrust = u.thrust;
 

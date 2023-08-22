@@ -216,7 +216,7 @@ void Odom_Data_t::feed(nav_msgs::OdometryConstPtr pMsg) {
 
         if ( one_min_count < 100 ) {
 
-            ROS_WARN("ODOM frequency seems lower than 100Hz, which is too low!");
+            // ROS_WARN("ODOM frequency seems lower than 100Hz, which is too low!");
         }
         one_min_count = 0;
         last_clear_count_time = now;
@@ -256,7 +256,7 @@ void Imu_Data_t::feed(sensor_msgs::ImuConstPtr pMsg) {
 
         if ( one_min_count < 100 ) {
 
-            ROS_WARN("IMU frequency seems lower than 100Hz, which is too low!");
+            // ROS_WARN("IMU frequency seems lower than 100Hz, which is too low!");
         }
         one_min_count = 0;
         last_clear_count_time = now;
@@ -283,13 +283,18 @@ void ExtendedState_Data_t::feed(mavros_msgs::ExtendedStateConstPtr pMsg) {
 Command_Data_t::Command_Data_t() {
 
     rcv_stamp = ros::Time(0);
+    cmd_init = false;
 }
 
 void Command_Data_t::feed(quadrotor_msgs::PositionCommandConstPtr pMsg) {
 
+    static double last_time;
+    static double last_yaw;
+    double now_time;
 
     msg = *pMsg;
     rcv_stamp = ros::Time::now();
+    now_time = ros::Time::now().toSec();
 
     p(0) = msg.position.x;
     p(1) = msg.position.y;
@@ -311,6 +316,37 @@ void Command_Data_t::feed(quadrotor_msgs::PositionCommandConstPtr pMsg) {
 
     yaw = uav_utils::normalize_angle(msg.yaw);
     yaw_rate = msg.yaw_dot;
+    if(!cmd_init){
+        last_time = now_time;
+        head_rate = 0.0;
+        last_yaw = yaw;
+    }
+    else{
+        double diff_time = now_time-last_time;
+        last_time = now_time;
+        double diff_yaw;
+        double angle1 = yaw;
+        double angle2 = last_yaw;
+        last_yaw = yaw;
+
+        double TwoPi = 2*M_PI;
+        if (angle1 < 0)
+            angle1 = TwoPi + angle1;
+        if (angle2 < 0)
+            angle2 = TwoPi + angle2;
+        double dist = angle1 - angle2;
+        if (dist > M_PI)
+            angle1 = angle1 - TwoPi;
+        //if two much on other side then invert second angle
+        else if (dist < -M_PI)
+            angle2 = angle2 - TwoPi;
+        diff_yaw = (angle1-angle2);
+        diff_time = 0.01;//hzchzc
+        head_rate = diff_yaw/diff_time;
+        uav_utils::limit_range(head_rate,1.0);     
+        // printf("angle1: %f, angle2: %f, head_rate: %f \n, diff_time: %f",angle1,angle2,head_rate,diff_time);
+    }
+    cmd_init = true;
 }
 
 // Battery_Data_t::Battery_Data_t()

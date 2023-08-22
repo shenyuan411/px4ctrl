@@ -13,6 +13,10 @@ public:
         double Kvi0, Kvi1, Kvi2;
         double Kvd0, Kvd1, Kvd2;
         double KAngR, KAngP, KAngY;
+
+        double Ka0,Ka1,Ka2;
+		double Kyaw;
+		double Krp;
     };
 
     struct RotorDrag
@@ -57,7 +61,7 @@ public:
         double speed;
     };
 
-    Gain gain;
+    Gain normal_gain,track_gain;
     RotorDrag rt_drag;
     MsgTimeout msg_timeout;
     RCReverse rc_reverse;
@@ -67,6 +71,8 @@ public:
     int pose_solver;
     double mass;
     double gra;
+    double full_thrust;
+    double hov_percent;
     double max_angle;
     double ctrl_freq_max;
     double max_manual_vel;
@@ -75,6 +81,7 @@ public:
     bool debug;
 
     bool use_bodyrate_ctrl;
+    bool perform_aerodynamics_compensation;
     // bool print_dbg;
 
     Parameter_t();

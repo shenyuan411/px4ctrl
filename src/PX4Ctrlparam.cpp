@@ -5,18 +5,38 @@ Parameter_t::Parameter_t() {}
 
 void Parameter_t::config_from_ros_handle(const ros::NodeHandle &nh) {
 
-    read_essential_param(nh, "gain/Kp0", gain.Kp0);
-    read_essential_param(nh, "gain/Kp1", gain.Kp1);
-    read_essential_param(nh, "gain/Kp2", gain.Kp2);
-    read_essential_param(nh, "gain/Kv0", gain.Kv0);
-    read_essential_param(nh, "gain/Kv1", gain.Kv1);
-    read_essential_param(nh, "gain/Kv2", gain.Kv2);
-    read_essential_param(nh, "gain/Kvi0", gain.Kvi0);
-    read_essential_param(nh, "gain/Kvi1", gain.Kvi1);
-    read_essential_param(nh, "gain/Kvi2", gain.Kvi2);
-    read_essential_param(nh, "gain/KAngR", gain.KAngR);
-    read_essential_param(nh, "gain/KAngP", gain.KAngP);
-    read_essential_param(nh, "gain/KAngY", gain.KAngY);
+    read_essential_param(nh, "gain/normal/Kp0", normal_gain.Kp0);
+    read_essential_param(nh, "gain/normal/Kp1", normal_gain.Kp1);
+    read_essential_param(nh, "gain/normal/Kp2", normal_gain.Kp2);
+    read_essential_param(nh, "gain/normal/Kv0", normal_gain.Kv0);
+    read_essential_param(nh, "gain/normal/Kv1", normal_gain.Kv1);
+    read_essential_param(nh, "gain/normal/Kv2", normal_gain.Kv2);
+    read_essential_param(nh, "gain/normal/Kvi0", normal_gain.Kvi0);
+    read_essential_param(nh, "gain/normal/Kvi1", normal_gain.Kvi1);
+    read_essential_param(nh, "gain/normal/Kvi2", normal_gain.Kvi2);
+    read_essential_param(nh, "gain/normal/KAngR", normal_gain.KAngR);
+    read_essential_param(nh, "gain/normal/KAngP", normal_gain.KAngP);
+    read_essential_param(nh, "gain/normal/KAngY", normal_gain.KAngY);
+
+
+	read_essential_param(nh, "gain/track/Kp0", track_gain.Kp0);
+	read_essential_param(nh, "gain/track/Kp1", track_gain.Kp1);
+	read_essential_param(nh, "gain/track/Kp2", track_gain.Kp2);
+	
+	read_essential_param(nh, "gain/track/Kv0", track_gain.Kv0);
+	read_essential_param(nh, "gain/track/Kv1", track_gain.Kv1);
+	read_essential_param(nh, "gain/track/Kv2", track_gain.Kv2);
+
+	read_essential_param(nh, "gain/track/Kvi0", track_gain.Kvi0);
+	read_essential_param(nh, "gain/track/Kvi1", track_gain.Kvi1);
+	read_essential_param(nh, "gain/track/Kvi2", track_gain.Kvi2);
+
+	read_essential_param(nh, "gain/track/Ka0", track_gain.Ka0);
+	read_essential_param(nh, "gain/track/Ka1", track_gain.Ka1);
+	read_essential_param(nh, "gain/track/Ka2", track_gain.Ka2);
+
+	read_essential_param(nh, "gain/track/Kyaw", track_gain.Kyaw);
+	read_essential_param(nh, "gain/track/Krp", track_gain.Krp);
 
     read_essential_param(nh, "rotor_drag/x", rt_drag.x);
     read_essential_param(nh, "rotor_drag/y", rt_drag.y);
@@ -32,8 +52,11 @@ void Parameter_t::config_from_ros_handle(const ros::NodeHandle &nh) {
     read_essential_param(nh, "pose_solver", pose_solver);
     read_essential_param(nh, "mass", mass);
     read_essential_param(nh, "gra", gra);
+    read_essential_param(nh, "hov_percent", hov_percent);
+	read_essential_param(nh, "full_thrust", full_thrust);
     read_essential_param(nh, "ctrl_freq_max", ctrl_freq_max);
     read_essential_param(nh, "use_bodyrate_ctrl", use_bodyrate_ctrl);
+    read_essential_param(nh,"perform_aerodynamics_compensation",perform_aerodynamics_compensation);
     read_essential_param(nh, "max_manual_vel", max_manual_vel);
     read_essential_param(nh, "max_angle", max_angle);
     read_essential_param(nh, "low_voltage", low_voltage);

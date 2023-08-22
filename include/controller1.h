@@ -20,6 +20,7 @@ struct Desired_State_t
     Eigen::Quaterniond q;
     double yaw;
     double yaw_rate;
+    double head_rate;
 
     Desired_State_t(){};
 
@@ -30,7 +31,8 @@ struct Desired_State_t
           j(Eigen::Vector3d::Zero()),
           q(odom.q),
           yaw(uav_utils::get_yaw_from_quaternion(odom.q)),
-          yaw_rate(0){};
+          yaw_rate(0),
+          head_rate(0){};
 };
 
 struct Controller_Output_t
@@ -38,27 +40,62 @@ struct Controller_Output_t
 
     // Orientation of the body frame with respect to the world frame
     Eigen::Quaterniond q;
-
+    Eigen::Quaterniond orientation;
+  
     // Body rates in body frame
     Eigen::Vector3d bodyrates; // [rad/s]
-
+    double roll_rate;
+	double pitch_rate;
+	double yaw_rate;
+    double normalized_thrust;
     // Collective mass normalized thrust
     double thrust;
 
-    //Eigen::Vector3d des_v_real;
+    Eigen::Vector3d des_v_real;
 };
 
+struct SO3_Controller_Output_t
+{
+	Eigen::Matrix3d Rdes;
+	Eigen::Vector3d Fdes;
+	double net_force;
+};
 
 class LinearControl
 {
 public:
     LinearControl(Parameter_t &);
 
+    Eigen::Vector3d int_e_v;
+    Eigen::Matrix3d Kp;
+	Eigen::Matrix3d Kv;
+	Eigen::Matrix3d Kvi;
+	Eigen::Matrix3d Ka;
+    double Kyaw;
+    double dt;
+    Eigen::MatrixXd A, B, Q, N,R,K;
+   
+    quadrotor_msgs::Px4ctrlDebug
+    update(
+    const Desired_State_t& des, 
+	const Odom_Data_t& odom,
+    const Imu_Data_t &imu,  
+	Controller_Output_t& u, 
+	SO3_Controller_Output_t& u_so3
+    );
+
     quadrotor_msgs::Px4ctrlDebug
     calculateControl(const Desired_State_t &des,
         const Odom_Data_t &odom,
         const Imu_Data_t &imu, 
         Controller_Output_t &u);
+
+    quadrotor_msgs::Px4ctrlDebug
+    DLQR_Control(const Desired_State_t &des,
+        const Odom_Data_t &odom,
+        const Imu_Data_t &imu, 
+        Controller_Output_t &u);
+    
     
     quadrotor_msgs::Px4ctrlDebug
     update_alg1(const Desired_State_t &des,
@@ -66,8 +103,28 @@ public:
         const Imu_Data_t &imu,
         Controller_Output_t &u);
 
+    Controller_Output_t computeNominalReferenceInputs(
+    const Desired_State_t& reference_state,
+    const Odom_Data_t& attitude_estimate) const;
+    Eigen::Vector3d computeRobustBodyXAxis(
+    const Eigen::Vector3d& x_B_prototype, const Eigen::Vector3d& x_C,
+    const Eigen::Vector3d& y_C,
+    const Eigen::Quaterniond& attitude_estimate) const; 
+
+    Eigen::Quaterniond computeDesiredAttitude(
+    const Eigen::Vector3d& desired_acceleration, const double reference_heading,
+    const Eigen::Quaterniond& attitude_estimate) const;
     bool estimateThrustModel(const Eigen::Vector3d &est_v);
+    bool almostZero(const double value) const;
+	bool almostZeroThrust(const double thrust_value) const;
     void resetThrustMapping(void);
+    void DLQR(const Eigen::MatrixXd &A, 
+    const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q,
+    const Eigen::MatrixXd &R, const double tolerance,
+    const int max_num_iteration, Eigen::MatrixXd *ptr_K);
+
+    void DARE(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R,
+                    const Eigen::MatrixXd &N, Eigen::MatrixXd *K, const double eps);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -89,21 +146,6 @@ private:
         Eigen::Vector3d &xNor,
         Eigen::Vector3d &xNord) const;
 
-    Eigen::Vector3d computeLimitedTotalAcc(
-        const Eigen::Vector3d &ref_acc) const;
-    
-    void computeFlatInput(const Eigen::Vector3d &thr_acc,
-        const Eigen::Vector3d &jer,
-        const double &yaw,
-        const double &yawd,
-        const Eigen::Quaterniond &att_est,
-        Eigen::Quaterniond &att,
-        Eigen::Vector3d &omg) const;
-    
-    Eigen::Vector3d computeFeedBackControlBodyrates(
-        const Eigen::Quaterniond &des_q,
-        const Eigen::Quaterniond &est_q);
-    
     double computeDesiredCollectiveThrustSignal(const Eigen::Vector3d &des_acc);
     double fromQuaternion2yaw(Eigen::Quaterniond q);
 };

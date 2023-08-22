@@ -12,7 +12,7 @@
 
 #include "ROScallback.h"
 // #include "ThrustCurve.h"
-#include "controller.h"
+#include "controller1.h"
 
 struct AutoTakeoffLand_t
 {
@@ -93,8 +93,9 @@ private:
     RcDy_Data_t rc_dy_data;
     // ---- control related ----
     Desired_State_t get_hover_des();
+    Desired_State_t get_hover_des2();
     Desired_State_t get_cmd_des();
-
+    Desired_State_t get_cmd_des2();
     // ---- auto takeoff/land ----
     void motors_idling(const Imu_Data_t &imu, Controller_Output_t &u);
     void land_detector(const State_t state, const Desired_State_t &des, const Odom_Data_t &odom); // Detect landing 

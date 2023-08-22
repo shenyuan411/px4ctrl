@@ -139,6 +139,8 @@ public:
     Eigen::Vector3d j;
     double yaw;
     double yaw_rate;
+    double head_rate;
+    bool cmd_init;
 
     quadrotor_msgs::PositionCommand msg;
     ros::Time rcv_stamp;

@@ -2,16 +2,22 @@
 # ⭐⭐⭐  Set parameters carefully for satisfied performance!   ⭐⭐⭐ #
 #########################################################################
 
-mass        : 1.32 # kg 
+mass        : 1.0 # kg 
 gra         : 9.81 
+# hov_percent : 0.4694   # Thrust percentage in Stabilize/Arco mode 0.11736
+hov_percent : 0.72
+# full_thrust : 16.7176   # Real net thrust(unit:N) in 100% thrust percentage 13.6
+full_thrust: 13.6
+
 pose_solver : 1     # 0:From ZhepeiWang (drag & less singular) 1:From ZhepeiWang, 2:From rotor-drag    
 ctrl_freq_max   : 100.0
-use_bodyrate_ctrl: true
+use_bodyrate_ctrl: false
 max_manual_vel: 1.0
 max_angle: 30  # Attitude angle limit in degree. A negative value means no limit.
 low_voltage: 13.2 # 4S battery
 leader: true # leader control the trigger of ego
-debug: false
+debug: true
+perform_aerodynamics_compensation: false
 
 rc_reverse: # *
     roll: false
@@ -22,7 +28,7 @@ rc_reverse: # *
 auto_takeoff_land:
     enable: true
     enable_auto_arm: true
-    no_RC: false # set true when sim, set false in exp
+    no_RC: true # set true when sim, set false in exp
     takeoff_height: 1.0 # m
     takeoff_land_speed: 0.3 # m/s
 
@@ -34,28 +40,52 @@ thrust_model: # The model that maps thrust signal u(0~1) to real thrust force F(
     K2: 1.6942 # Needs precise calibration!
     K3: 0.6786 # Needs precise calibration! K3 equals THR_MDL_FAC in https://docs.px4.io/master/en/config_mc/pid_tuning_guide_multicopter.html.
     # approximate thrust mapping parameters
-    hover_percentage: 0.5  # Thrust percentage in Stabilize/Arco mode # *
-
+    hover_percentage: 0.72  # Thrust percentage in Stabilize/Arco mode # * 0.72
+   
 gain: 
-    # Cascade PID controller. Recommend to read the code.
-    Kp0: 3.5
-    Kp1: 3.5
-    Kp2: 3.5
-    Kv0: 3.5
-    Kv1: 3.5
-    Kv2: 3.5
-    # ↓↓↓ No use now --
-    Kvi0: 0.0
-    Kvi1: 0.0
-    Kvi2: 0.0
-    Kvd0: 0.0
-    Kvd1: 0.0
-    Kvd2: 0.0
-    # ↓↓↓ Only used in rate control mode.
-    KAngR: 10.0
-    KAngP: 10.0
-    KAngY: 5.0
-
+    normal:
+        # Cascade PID controller. Recommend to read the code.
+        Kp0: 3.5
+        Kp1: 3.5
+        Kp2: 3.5
+        Kv0: 3.5
+        Kv1: 3.5
+        Kv2: 3.5
+        # ↓↓↓ No use now --
+        Kvi0: 0.0
+        Kvi1: 0.0
+        Kvi2: 0.0
+        Kvd0: 0.0
+        Kvd1: 0.0
+        Kvd2: 0.0
+        # ↓↓↓ Only used in rate control mode.
+        KAngR: 10.0
+        KAngP: 10.0
+        KAngY: 5.0
+    track:
+        Kp0: 1.5 #1.5
+        Kp1: 1.5 #5
+        Kp2: 1.5
+        Kv0: 1.5 #6
+        Kv1: 1.5 #6
+        Kv2: 1.5 #6
+        Kvi0: 0.2
+        Kvi1: 0.2
+        Kvi2: 0.2
+        # Kp0: 20.0
+        # Kp1: 20.0
+        # Kp2: 20.0
+        # Kv0: 8.0
+        # Kv1: 8.0
+        # Kv2: 8.0
+        # Kvi0: 0.1
+        # Kvi1: 0.1
+        # Kvi2: 0.1
+        Ka0: 1.0
+        Ka1: 1.0
+        Ka2: 1.0
+        Kyaw: 10.0 # 15.0
+        Krp: 30.0 #25
 rotor_drag:  
     x: 0.0  # The reduced acceleration on each axis caused by rotor drag. Unit:(m*s^-2)/(m*s^-1).
     y: 0.0  # Same as above
