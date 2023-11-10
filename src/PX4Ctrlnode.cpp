@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
     //                                             ros::VoidConstPtr(),
     //                                             ros::TransportHints().tcpNoDelay());
 
+	// 订阅起飞命令话题，takeoff_land
+	// 回调函数	->fsm.takeoff_land_data.triggered = 1，接收起飞命令
     ros::Subscriber takeoff_land_sub =
         nh.subscribe<quadrotor_msgs::TakeoffLand>("takeoff_land",
                                                   100,
@@ -77,7 +79,10 @@ int main(int argc, char *argv[])
                                                   ros::VoidConstPtr(),
                                                   ros::TransportHints().tcpNoDelay());
 
+	// /mavros/setpoint_raw/attitude 对应有两种方式控制：1.姿态+油门；2.机体角速度+油门
     fsm.ctrl_FCU_pub = nh.advertise<mavros_msgs::AttitudeTarget>("mavros/setpoint_raw/attitude", 10);
+    //首先飞机要处在定点模式下，此时把6通道拨杆从控制指令拒绝状态拨到使能状态，此刻px4ctrl会发一个`/traj_start_trigger`出来，
+    // 当下还尚未切换到指令控制模式，px4ctrl会等待外部指令，一旦接收到指令，模式就会切换，屏幕也会打印绿色的"[px4ctrl] AUTO_HOVER(L2) --> CMD_CTRL(L3)"
     fsm.traj_start_trigger_pub = nh.advertise<geometry_msgs::PoseStamped>("/traj_start_trigger", 10);
 
     fsm.debug_pub = nh.advertise<quadrotor_msgs::Px4ctrlDebug>("/debugPx4ctrl", 10); // debug
@@ -91,6 +96,7 @@ int main(int argc, char *argv[])
     dynamic_reconfigure::Server<px4ctrl::fake_rcConfig> server;
     dynamic_reconfigure::Server<px4ctrl::fake_rcConfig>::CallbackType f;
 
+	//判断从参数服务器读过来的参数设置是否需要遥控：1不需要，0需要
     if (param.takeoff_land.no_RC)
     {
         f = boost::bind(&Dynamic_Data_t::feed, &fsm.dy_data ,_1); //绑定回调函数
@@ -113,6 +119,7 @@ int main(int argc, char *argv[])
     }
 
     int trials = 0;
+    //进入死循环，检查px4的连接，连接正常跳出循环
     while (ros::ok() && !fsm.state_data.current_state.connected)
     {
         ros::spinOnce();
@@ -121,6 +128,7 @@ int main(int argc, char *argv[])
             ROS_ERROR("Unable to connnect to PX4!!!");
     }
 
+	//主循环，以固定帧率进入fsm.process()进程
     ros::Rate r(param.ctrl_freq_max);
     while (ros::ok())
     {

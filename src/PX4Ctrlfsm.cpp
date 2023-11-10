@@ -4,6 +4,22 @@
 using namespace std;
 using namespace uav_utils;
 
+// u就是直接给px4的控制量，des是期望的位姿
+// 状态识别	状态机的灵魂，值得借鉴！！！
+// 整个状态机在做的就是根据模式选择相应的期望位姿des，后面会传给控制器
+/* 这里将控制大致分为了三级：
+		L1：手动控制
+		L2：自动悬停
+		L3：命令控制（跟踪轨迹）
+		介于L1和L2之间的：自动起飞\降落，L3模式不允许自动降落
+
+	5通道: 切换px4ctrl控制（Offboard模式）或飞控的原飞行模式
+    6通道: 是否允许px4ctrl接收你的代码发给px4ctrl的控制指令
+    7通道: 紧急停桨（Emergency Stop）
+    8通道: 在飞控未解锁的状态下一键重启（飞控内选择ekf2估计器时常用）
+*/
+
+// 初始化
 PX4CtrlFSM::PX4CtrlFSM(Parameter_t &param_, LinearControl &controller_) : param(param_), controller(controller_) /*, thrust_curve(thrust_curve_)*/
 {
     state = MANUAL_CTRL;
@@ -313,8 +329,8 @@ void PX4CtrlFSM::process()
     } else {
 
         // controller.calculateControl(des, odom_data, imu_data, u);
-        // debug_msg = controller.calculateControl(des, odom_data, imu_data, u);   //计算角度
-        debug_msg = controller.DLQR_Control(des, odom_data, imu_data, u);   //计算角度
+        debug_msg = controller.calculateControl(des, odom_data, imu_data, u);   //计算角度 SYZ换成pid
+        // debug_msg = controller.DLQR_Control(des, odom_data, imu_data, u);   //计算角度
         
         debug_msg.header.stamp = now_time;
         if (param.debug) {
